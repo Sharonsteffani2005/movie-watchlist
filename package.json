@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "A full-stack movie watchlist website",
   "main": "server.js",
+  "engines": {
+    "node": "20.11.0"
+  },
   "scripts": {
     "start": "node server.js"
   },
