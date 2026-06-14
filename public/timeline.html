@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Watch History Timeline</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav { background: #1a1a2e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.2rem; font-size: 0.9rem; }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #e94560; }
+    .container { max-width: 750px; margin: 3rem auto; padding: 0 2rem; }
+    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    h2 span { color: #e94560; }
+    .subtitle { color: #aaa; margin-bottom: 2rem; }
+
+    .year-group { margin-bottom: 2.5rem; }
+    .year-label {
+      font-size: 1.3rem; font-weight: bold; color: #e94560;
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;
+    }
+    .year-label::after {
+      content: ''; flex: 1; height: 1px; background: #2a2a4a;
+    }
+    .year-count { font-size: 0.85rem; color: #aaa; font-weight: normal; }
+
+    .timeline { position: relative; padding-left: 30px; }
+    .timeline::before {
+      content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
+      width: 2px; background: #2a2a4a;
+    }
+
+    .timeline-item {
+      position: relative; margin-bottom: 1.2rem;
+      display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .timeline-dot {
+      position: absolute; left: -26px; top: 12px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #e94560; border: 2px solid #0f0f1a; flex-shrink: 0;
+    }
+
+    .timeline-card {
+      background: #1a1a2e; border-radius: 12px; padding: 1rem 1.2rem;
+      border: 1px solid #2a2a4a; flex: 1; cursor: pointer;
+      transition: border-color 0.2s;
+      display: flex; gap: 1rem; align-items: center;
+    }
+    .timeline-card:hover { border-color: #e94560; }
+
+    .timeline-poster {
+      width: 50px; height: 70px; border-radius: 6px;
+      background: #0f0f1a; overflow: hidden; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+      border: 1px solid #2a2a4a;
+    }
+    .timeline-poster img { width: 100%; height: 100%; object-fit: cover; }
+
+    .timeline-info { flex: 1; }
+    .timeline-title { font-weight: bold; font-size: 1rem; margin-bottom: 4px; }
+    .timeline-meta { font-size: 0.8rem; color: #aaa; margin-bottom: 4px; }
+    .timeline-rating { font-size: 0.85rem; color: #f5a623; }
+
+    .timeline-date {
+      font-size: 0.8rem; color: #aaa; text-align: right;
+      flex-shrink: 0; min-width: 80px;
+    }
+    .timeline-date .day { font-size: 1.2rem; font-weight: bold; color: #fff; }
+    .timeline-date .month { color: #e94560; font-weight: bold; }
+
+    .empty { color: #aaa; text-align: center; padding: 4rem; }
+    .empty a { color: #e94560; }
+
+    .stats-row {
+      display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;
+    }
+    .mini-stat {
+      background: #1a1a2e; border-radius: 10px; padding: 1rem 1.5rem;
+      border: 1px solid #2a2a4a; text-align: center; flex: 1;
+    }
+    .mini-stat .num { font-size: 1.8rem; font-weight: bold; color: #e94560; }
+    .mini-stat .label { font-size: 0.75rem; color: #aaa; margin-top: 2px; }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="add.html">+ Add</a>
+    <a href="goals.html">Goals</a>
+    <a href="timeline.html" class="active">Timeline</a>
+    <a href="picker.html">Picker</a>
+    <a href="topten.html">Top 10</a>
+    <a href="people.html">People</a>
+    <a href="friends.html">Friends</a>
+    <a href="stats.html">Stats</a>
+  </div>
+</nav>
+<div class="container">
+  <h2>🗓️ Watch History <span>Timeline</span></h2>
+  <p class="subtitle">Every movie you've watched, in the order you watched them</p>
+
+  <div class="stats-row">
+    <div class="mini-stat"><div class="num" id="total-watched">0</div><div class="label">Total Watched</div></div>
+    <div class="mini-stat"><div class="num" id="this-year">0</div><div class="label">This Year</div></div>
+    <div class="mini-stat"><div class="num" id="this-month">0</div><div class="label">This Month</div></div>
+  </div>
+
+  <div id="timeline-content"><div class="empty">Loading...</div></div>
+</div>
+<script>
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+
+  async function load() {
+    const movies = await fetch('/api/timeline').then(r => r.json());
+    const content = document.getElementById('timeline-content');
+
+    if (movies.length === 0) {
+      content.innerHTML = '<div class="empty">No watched movies with dates yet.<br><br>Add a movie, set status to "Watched" and pick a date — it will appear here!<br><br><a href="add.html">+ Add a Movie</a></div>';
+      document.getElementById('total-watched').textContent = 0;
+      document.getElementById('this-year').textContent = 0;
+      document.getElementById('this-month').textContent = 0;
+      return;
+    }
+
+    // Stats
+    document.getElementById('total-watched').textContent = movies.length;
+    document.getElementById('this-year').textContent = movies.filter(m => m.watched_date && m.watched_date.startsWith(currentYear)).length;
+    document.getElementById('this-month').textContent = movies.filter(m => {
+      if (!m.watched_date) return false;
+      const d = new Date(m.watched_date);
+      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+    }).length;
+
+    // Group by year
+    const grouped = {};
+    movies.forEach(m => {
+      const year = m.watched_date ? m.watched_date.substring(0, 4) : 'Unknown';
+      if (!grouped[year]) grouped[year] = [];
+      grouped[year].push(m);
+    });
+
+    content.innerHTML = Object.keys(grouped).sort((a,b) => b-a).map(year => `
+      <div class="year-group">
+        <div class="year-label">
+          ${year}
+          <span class="year-count">${grouped[year].length} movie${grouped[year].length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="timeline">
+          ${grouped[year].map(m => {
+            const date = m.watched_date ? new Date(m.watched_date) : null;
+            const day = date ? date.getDate() : '?';
+            const month = date ? MONTHS[date.getMonth()] : '';
+            return `
+              <div class="timeline-item" onclick="window.location='detail.html?id=${m.id}'">
+                <div class="timeline-dot"></div>
+                <div class="timeline-card">
+                  <div class="timeline-poster">
+                    ${m.poster ? `<img src="${m.poster}" onerror="this.parentElement.innerHTML='🎬'"/>` : '🎬'}
+                  </div>
+                  <div class="timeline-info">
+                    <div class="timeline-title">${m.title}</div>
+                    <div class="timeline-meta">${m.genre}${m.director ? ' • ' + m.director : ''}</div>
+                    <div class="timeline-rating">${m.rating || 'Not rated'}</div>
+                  </div>
+                  <div class="timeline-date">
+                    <div class="day">${day}</div>
+                    <div class="month">${month}</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  load();
+</script>
+</body>
+</html>

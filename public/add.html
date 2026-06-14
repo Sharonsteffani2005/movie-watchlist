@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Movie</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav { background: #1a1a2e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.2rem; font-size: 0.9rem; }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #e94560; }
+    .container { max-width: 600px; margin: 3rem auto; padding: 0 2rem; }
+    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    h2 span { color: #e94560; }
+    .subtitle { color: #aaa; margin-bottom: 2rem; font-size: 0.95rem; }
+    .form-group { margin-bottom: 1.2rem; }
+    label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 6px; }
+    input, select, textarea { width: 100%; padding: 0.7rem 1rem; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; color: #fff; font-size: 1rem; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #e94560; }
+    textarea { resize: vertical; min-height: 100px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .poster-preview { width: 100%; height: 200px; background: #16213e; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 4rem; margin-bottom: 1rem; overflow: hidden; border: 1px solid #2a2a4a; }
+    .poster-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .btn { width: 100%; padding: 0.85rem; background: #e94560; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 0.5rem; }
+    .btn:hover { background: #c73652; }
+    .btn-back { display: inline-block; color: #aaa; text-decoration: none; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .btn-back:hover { color: #fff; }
+    .success { background: #0d3320; color: #4ade80; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: none; text-align: center; }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="add.html" class="active">+ Add</a>
+    <a href="goals.html">Goals</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="picker.html">Picker</a>
+    <a href="topten.html">Top 10</a>
+    <a href="people.html">People</a>
+    <a href="friends.html">Friends</a>
+    <a href="stats.html">Stats</a>
+  </div>
+</nav>
+<div class="container">
+  <a href="index.html" class="btn-back">← Back to Home</a>
+  <h2>Add a <span>Movie</span></h2>
+  <p class="subtitle">Fill in the details below to add a movie to your watchlist</p>
+  <div class="success" id="success">✅ Movie added! <a href="index.html" style="color:#4ade80">Go to Home</a></div>
+  <div class="poster-preview" id="poster-preview">🎬</div>
+  <div class="form-group">
+    <label>Poster URL (optional)</label>
+    <input type="text" id="poster" placeholder="https://image-url.com/poster.jpg" oninput="previewPoster()" />
+  </div>
+  <div class="form-group">
+    <label>Movie Title *</label>
+    <input type="text" id="title" placeholder="e.g. Inception" />
+  </div>
+  <div class="row">
+    <div class="form-group">
+      <label>Genre *</label>
+      <select id="genre">
+        <option value="">-- Select Genre --</option>
+        <option value="Action">Action</option>
+        <option value="Comedy">Comedy</option>
+        <option value="Drama">Drama</option>
+        <option value="Horror">Horror</option>
+        <option value="Sci-Fi">Sci-Fi</option>
+        <option value="Romance">Romance</option>
+        <option value="Thriller">Thriller</option>
+        <option value="Animation">Animation</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Year</label>
+      <input type="number" id="year" placeholder="e.g. 2010" min="1900" max="2026" />
+    </div>
+  </div>
+  <div class="row">
+    <div class="form-group">
+      <label>Your Rating</label>
+      <select id="rating">
+        <option value="">-- Rate it --</option>
+        <option value="⭐">⭐ (1/5)</option>
+        <option value="⭐⭐">⭐⭐ (2/5)</option>
+        <option value="⭐⭐⭐">⭐⭐⭐ (3/5)</option>
+        <option value="⭐⭐⭐⭐">⭐⭐⭐⭐ (4/5)</option>
+        <option value="⭐⭐⭐⭐⭐">⭐⭐⭐⭐⭐ (5/5)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Watch Status *</label>
+      <select id="status">
+        <option value="Want to Watch">Want to Watch</option>
+        <option value="Watching">Watching</option>
+        <option value="Watched">Watched</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Date Watched (optional — for goal tracking)</label>
+    <input type="date" id="watched_date" />
+  </div>
+  <div class="form-group">
+    <label>Director (optional)</label>
+    <input type="text" id="director" placeholder="e.g. Christopher Nolan" />
+  </div>
+  <div class="form-group">
+    <label>Cast (optional — separate with commas)</label>
+    <input type="text" id="cast" placeholder="e.g. Leonardo DiCaprio, Tom Hardy" />
+  </div>
+  <div class="form-group">
+    <label>Your Review (optional)</label>
+    <textarea id="review" placeholder="Write your thoughts about this movie..."></textarea>
+  </div>
+  <button class="btn" onclick="addMovie()">Add Movie 🎬</button>
+</div>
+<script>
+  function previewPoster() {
+    const url = document.getElementById('poster').value;
+    const preview = document.getElementById('poster-preview');
+    if (url) {
+      preview.innerHTML = `<img src="${url}" onerror="this.parentElement.innerHTML='🎬'" />`;
+    } else {
+      preview.innerHTML = '🎬';
+    }
+  }
+
+  async function addMovie() {
+    const title = document.getElementById('title').value.trim();
+    const genre = document.getElementById('genre').value;
+    const year = document.getElementById('year').value;
+    const rating = document.getElementById('rating').value;
+    const status = document.getElementById('status').value;
+    const review = document.getElementById('review').value.trim();
+    const poster = document.getElementById('poster').value.trim();
+    const director = document.getElementById('director').value.trim();
+    const cast = document.getElementById('cast').value.trim();
+    const watched_date = document.getElementById('watched_date').value;
+
+    if (!title || !genre) { alert('Please fill in Title and Genre!'); return; }
+
+    await fetch('/api/movies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, genre, year: parseInt(year) || null, rating, status, review, poster, director, cast, watched_date })
+    });
+
+    document.getElementById('success').style.display = 'block';
+    ['title', 'year', 'review', 'poster', 'director', 'cast', 'watched_date'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('genre').value = '';
+    document.getElementById('rating').value = '';
+    document.getElementById('status').value = 'Want to Watch';
+    document.getElementById('poster-preview').innerHTML = '🎬';
+  }
+</script>
+</body>
+</html>

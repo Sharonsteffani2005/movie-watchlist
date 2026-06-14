@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Movie Watchlist</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav {
+      background: #1a1a2e; padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.5rem; font-size: 0.95rem; }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #e94560; }
+    .hero { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 3rem 2rem; text-align: center; }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .hero h1 span { color: #e94560; }
+    .hero p { color: #aaa; margin-bottom: 1.5rem; }
+    .hero .add-btn { background: #e94560; color: white; padding: 0.75rem 2rem; border-radius: 30px; text-decoration: none; font-size: 1rem; display: inline-block; }
+    .hero .add-btn:hover { background: #c73652; }
+    .stats-bar { display: flex; justify-content: center; gap: 2rem; background: #16213e; padding: 1rem; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat .num { font-size: 1.5rem; font-weight: bold; color: #e94560; }
+    .stat .label { font-size: 0.75rem; color: #aaa; }
+    .controls { max-width: 1100px; margin: 2rem auto; padding: 0 2rem; display: flex; gap: 10px; flex-wrap: wrap; }
+    .controls input { flex: 1; padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a2e; color: #fff; font-size: 1rem; min-width: 200px; }
+    .controls select { padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid #2a2a4a; background: #1a1a2e; color: #fff; font-size: 0.9rem; }
+    .movies-grid { max-width: 1100px; margin: 0 auto; padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; }
+    .movie-card { background: #1a1a2e; border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s; border: 1px solid #2a2a4a; }
+    .movie-card:hover { transform: translateY(-5px); border-color: #e94560; }
+    .movie-poster { width: 100%; height: 280px; background: #16213e; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+    .movie-poster img { width: 100%; height: 100%; object-fit: cover; }
+    .movie-info { padding: 0.75rem; }
+    .movie-title { font-size: 0.95rem; font-weight: bold; margin-bottom: 4px; }
+    .movie-year { font-size: 0.8rem; color: #aaa; margin-bottom: 6px; }
+    .movie-bottom { display: flex; justify-content: space-between; align-items: center; }
+    .movie-rating { color: #f5a623; font-size: 0.8rem; }
+    .status-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+    .s-watched { background: #0d3320; color: #4ade80; }
+    .s-watching { background: #1a2a4a; color: #60a5fa; }
+    .s-want { background: #2a1a2a; color: #c084fc; }
+    .empty { text-align: center; color: #aaa; padding: 4rem; font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html" class="active">Home</a>
+    <a href="add.html">+ Add Movie</a>
+    <a href="topten.html">Top 10</a>
+    <a href="people.html">People</a>
+    <a href="friends.html">Friends</a>
+    <a href="stats.html">Stats</a>
+  </div>
+</nav>
+<div class="hero">
+  <h1>Your Movie <span>Watchlist</span></h1>
+  <p>Track movies you've watched, are watching, and want to watch</p>
+  <a href="add.html" class="add-btn">+ Add a Movie</a>
+</div>
+<div class="stats-bar">
+  <div class="stat"><div class="num" id="total">0</div><div class="label">Total</div></div>
+  <div class="stat"><div class="num" id="watched">0</div><div class="label">Watched</div></div>
+  <div class="stat"><div class="num" id="watching">0</div><div class="label">Watching</div></div>
+  <div class="stat"><div class="num" id="want">0</div><div class="label">Want to Watch</div></div>
+</div>
+<div class="controls">
+  <input type="text" id="search" placeholder="🔍 Search movies..." oninput="filterMovies()" />
+  <select id="filter-status" onchange="filterMovies()">
+    <option value="">All Statuses</option>
+    <option value="Watched">Watched</option>
+    <option value="Watching">Watching</option>
+    <option value="Want to Watch">Want to Watch</option>
+  </select>
+  <select id="filter-genre" onchange="filterMovies()">
+    <option value="">All Genres</option>
+    <option value="Action">Action</option>
+    <option value="Comedy">Comedy</option>
+    <option value="Drama">Drama</option>
+    <option value="Horror">Horror</option>
+    <option value="Sci-Fi">Sci-Fi</option>
+    <option value="Romance">Romance</option>
+    <option value="Thriller">Thriller</option>
+    <option value="Animation">Animation</option>
+  </select>
+</div>
+<div class="movies-grid" id="movies-grid">
+  <div class="empty">Loading movies...</div>
+</div>
+<script>
+  let allMovies = [];
+  const statusClass = { 'Watched': 's-watched', 'Watching': 's-watching', 'Want to Watch': 's-want' };
+
+  async function loadMovies() {
+    const res = await fetch('/api/movies');
+    allMovies = await res.json();
+    const stats = await fetch('/api/stats').then(r => r.json());
+    document.getElementById('total').textContent = stats.total;
+    document.getElementById('watched').textContent = stats.watched;
+    document.getElementById('watching').textContent = stats.watching;
+    document.getElementById('want').textContent = stats.want;
+    filterMovies();
+  }
+
+  function filterMovies() {
+    const query = document.getElementById('search').value.toLowerCase();
+    const status = document.getElementById('filter-status').value;
+    const genre = document.getElementById('filter-genre').value;
+    let filtered = allMovies;
+    if (query) filtered = filtered.filter(m => m.title.toLowerCase().includes(query));
+    if (status) filtered = filtered.filter(m => m.status === status);
+    if (genre) filtered = filtered.filter(m => m.genre === genre);
+    renderMovies(filtered);
+  }
+
+  function renderMovies(movies) {
+    const grid = document.getElementById('movies-grid');
+    if (movies.length === 0) {
+      grid.innerHTML = '<div class="empty">No movies found. <a href="add.html" style="color:#e94560">Add one!</a></div>';
+      return;
+    }
+    grid.innerHTML = movies.map(m => `
+      <div class="movie-card" onclick="window.location='detail.html?id=${m.id}'">
+        <div class="movie-poster">
+          ${m.poster ? `<img src="${m.poster}" alt="${m.title}" onerror="this.parentElement.innerHTML='🎬'"/>` : '🎬'}
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">${m.title}</div>
+          <div class="movie-year">${m.year || ''} • ${m.genre}</div>
+          <div class="movie-bottom">
+            <span class="movie-rating">${m.rating || ''}</span>
+            <span class="status-badge ${statusClass[m.status] || 's-want'}">${m.status}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  loadMovies();
+</script>
+</body>
+</html>

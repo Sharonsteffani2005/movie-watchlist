@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Movie Notes</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav { background: #1a1a2e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.2rem; font-size: 0.9rem; }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #e94560; }
+    .container { max-width: 750px; margin: 2rem auto; padding: 0 2rem; }
+    .btn-back { color: #aaa; text-decoration: none; font-size: 0.9rem; display: inline-block; margin-bottom: 1.5rem; }
+    .btn-back:hover { color: #fff; }
+    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    h2 span { color: #e94560; }
+    .subtitle { color: #aaa; margin-bottom: 2rem; }
+
+    .movie-header {
+      display: flex; gap: 1.2rem; align-items: center;
+      background: #1a1a2e; border-radius: 12px; padding: 1.2rem;
+      border: 1px solid #2a2a4a; margin-bottom: 2rem;
+    }
+    .movie-thumb {
+      width: 60px; height: 85px; border-radius: 8px; background: #0f0f1a;
+      overflow: hidden; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; flex-shrink: 0; border: 1px solid #2a2a4a;
+    }
+    .movie-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .movie-header-info h3 { font-size: 1.2rem; margin-bottom: 4px; }
+    .movie-header-info p { font-size: 0.85rem; color: #aaa; }
+
+    .add-note {
+      background: #1a1a2e; border-radius: 12px; padding: 1.2rem;
+      border: 1px solid #2a2a4a; margin-bottom: 2rem;
+    }
+    .add-note h3 { font-size: 0.9rem; color: #e94560; margin-bottom: 1rem; text-transform: uppercase; }
+    .note-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .note-row input {
+      flex: 1; padding: 0.6rem 0.8rem; background: #0f0f1a;
+      border: 1px solid #2a2a4a; border-radius: 6px; color: #fff; font-size: 0.9rem;
+    }
+    .note-row input:focus { outline: none; border-color: #e94560; }
+    textarea {
+      width: 100%; padding: 0.7rem; background: #0f0f1a;
+      border: 1px solid #2a2a4a; border-radius: 6px; color: #fff;
+      font-size: 0.95rem; resize: vertical; min-height: 80px; margin-bottom: 10px;
+    }
+    textarea:focus { outline: none; border-color: #e94560; }
+    .btn-add {
+      background: #e94560; color: #fff; border: none;
+      padding: 0.6rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+    }
+    .btn-add:hover { background: #c73652; }
+
+    .notes-list { display: flex; flex-direction: column; gap: 12px; }
+    .note-card {
+      background: #1a1a2e; border-radius: 10px; padding: 1rem 1.2rem;
+      border: 1px solid #2a2a4a;
+    }
+    .note-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .note-timestamp { font-size: 0.8rem; color: #e94560; font-weight: bold; }
+    .note-delete { background: none; border: none; color: #555; cursor: pointer; font-size: 1rem; }
+    .note-delete:hover { color: #e94560; }
+    .note-text { font-size: 0.95rem; color: #ddd; line-height: 1.6; }
+    .note-date { font-size: 0.75rem; color: #555; margin-top: 6px; }
+
+    .empty { color: #aaa; text-align: center; padding: 2rem; }
+    .loading { color: #aaa; text-align: center; padding: 2rem; }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="add.html">+ Add</a>
+    <a href="goals.html">Goals</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="picker.html">Picker</a>
+    <a href="topten.html">Top 10</a>
+    <a href="people.html">People</a>
+    <a href="friends.html">Friends</a>
+    <a href="stats.html">Stats</a>
+  </div>
+</nav>
+<div class="container">
+  <a href="javascript:history.back()" class="btn-back">← Back</a>
+  <h2>📝 Movie <span>Notes</span></h2>
+  <p class="subtitle">Private notes and timestamps for your movie</p>
+
+  <div class="movie-header" id="movie-header">
+    <div class="loading">Loading...</div>
+  </div>
+
+  <div class="add-note">
+    <h3>✏️ Add a Note</h3>
+    <div class="note-row">
+      <input type="text" id="timestamp" placeholder="Timestamp (e.g. 1:23:45 or Scene name)" />
+    </div>
+    <textarea id="note-text" placeholder="Write your note here... (e.g. great scene, plot twist, quote you loved)"></textarea>
+    <button class="btn-add" onclick="addNote()">Add Note</button>
+  </div>
+
+  <div class="notes-list" id="notes-list">
+    <div class="loading">Loading notes...</div>
+  </div>
+</div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const movieId = params.get('id');
+  let movie = null;
+
+  async function load() {
+    movie = await fetch(`/api/movies/${movieId}`).then(r => r.json());
+    document.getElementById('movie-header').innerHTML = `
+      <div class="movie-thumb">
+        ${movie.poster ? `<img src="${movie.poster}" onerror="this.parentElement.innerHTML='🎬'"/>` : '🎬'}
+      </div>
+      <div class="movie-header-info">
+        <h3>${movie.title}</h3>
+        <p>${movie.genre}${movie.year ? ' • ' + movie.year : ''}${movie.director ? ' • ' + movie.director : ''}</p>
+      </div>
+    `;
+    loadNotes();
+  }
+
+  async function loadNotes() {
+    const notes = await fetch(`/api/movies/${movieId}/notes`).then(r => r.json());
+    const list = document.getElementById('notes-list');
+    if (notes.length === 0) {
+      list.innerHTML = '<div class="empty">No notes yet. Add your first note above!</div>';
+      return;
+    }
+    list.innerHTML = notes.map(n => `
+      <div class="note-card">
+        <div class="note-top">
+          ${n.timestamp ? `<span class="note-timestamp">⏱ ${n.timestamp}</span>` : '<span></span>'}
+          <button class="note-delete" onclick="deleteNote(${n.id})" title="Delete">✕</button>
+        </div>
+        <div class="note-text">${n.note}</div>
+        <div class="note-date">${new Date(n.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</div>
+      </div>
+    `).join('');
+  }
+
+  async function addNote() {
+    const note = document.getElementById('note-text').value.trim();
+    const timestamp = document.getElementById('timestamp').value.trim();
+    if (!note) { alert('Please write a note!'); return; }
+    await fetch(`/api/movies/${movieId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note, timestamp })
+    });
+    document.getElementById('note-text').value = '';
+    document.getElementById('timestamp').value = '';
+    loadNotes();
+  }
+
+  async function deleteNote(id) {
+    await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+    loadNotes();
+  }
+
+  load();
+</script>
+</body>
+</html>

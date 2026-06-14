@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Movie Detail</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav { background: #1a1a2e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.2rem; font-size: 0.9rem; }
+    nav a:hover { color: #fff; }
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 2rem; }
+    .btn-back { color: #aaa; text-decoration: none; font-size: 0.9rem; display: inline-block; margin-bottom: 1.5rem; }
+    .btn-back:hover { color: #fff; }
+    .movie-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
+    .poster { width: 100%; aspect-ratio: 2/3; background: #1a1a2e; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 5rem; border: 1px solid #2a2a4a; }
+    .poster img { width: 100%; height: 100%; object-fit: cover; }
+    .movie-details h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .meta { color: #aaa; font-size: 0.95rem; margin-bottom: 1rem; }
+    .meta span { margin-right: 1rem; }
+    .rating { font-size: 1.2rem; margin-bottom: 1rem; }
+    .status-badge { display: inline-block; font-size: 0.85rem; padding: 4px 14px; border-radius: 20px; margin-bottom: 1.5rem; }
+    .s-watched { background: #0d3320; color: #4ade80; }
+    .s-watching { background: #1a2a4a; color: #60a5fa; }
+    .s-want { background: #2a1a2a; color: #c084fc; }
+    .info-box { background: #1a1a2e; border-radius: 10px; padding: 1.2rem; border: 1px solid #2a2a4a; margin-bottom: 1rem; }
+    .info-box h3 { font-size: 0.85rem; color: #aaa; margin-bottom: 8px; text-transform: uppercase; }
+    .info-box p { color: #ddd; line-height: 1.6; font-size: 0.95rem; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .btn { padding: 0.6rem 1.5rem; border-radius: 8px; border: none; font-size: 0.9rem; cursor: pointer; }
+    .btn-edit { background: #1a1a2e; color: #fff; border: 1px solid #e94560; }
+    .btn-edit:hover { background: #e94560; }
+    .btn-delete { background: #1a1a2e; color: #e94560; border: 1px solid #e94560; }
+    .btn-delete:hover { background: #e94560; color: #fff; }
+    .btn-cinema { background: #e94560; color: #fff; border: 1px solid #e94560; }
+    .btn-cinema:hover { background: #c73652; }
+    .btn-notes { background: #1a2a4a; color: #60a5fa; border: 1px solid #60a5fa; }
+    .btn-notes:hover { background: #60a5fa; color: #fff; }
+    .edit-form { background: #1a1a2e; border-radius: 12px; padding: 1.5rem; border: 1px solid #2a2a4a; margin-top: 2rem; display: none; }
+    .edit-form h3 { margin-bottom: 1rem; color: #e94560; }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 4px; }
+    input, select, textarea { width: 100%; padding: 0.6rem 0.8rem; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 6px; color: #fff; font-size: 0.95rem; }
+    textarea { min-height: 80px; resize: vertical; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn-save { background: #e94560; color: #fff; width: 100%; padding: 0.7rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 0.5rem; }
+    .btn-save:hover { background: #c73652; }
+    @media (max-width: 600px) { .movie-layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="add.html">+ Add</a>
+    <a href="goals.html">Goals</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="picker.html">Picker</a>
+    <a href="topten.html">Top 10</a>
+    <a href="people.html">People</a>
+    <a href="friends.html">Friends</a>
+    <a href="stats.html">Stats</a>
+  </div>
+</nav>
+<div class="container">
+  <a href="index.html" class="btn-back">← Back to Home</a>
+  <div class="movie-layout" id="movie-layout">
+    <div style="color:#aaa;text-align:center;padding:2rem;">Loading...</div>
+  </div>
+  <div class="edit-form" id="edit-form">
+    <h3>✏️ Edit Movie</h3>
+    <div class="form-group"><label>Title</label><input type="text" id="edit-title" /></div>
+    <div class="row">
+      <div class="form-group">
+        <label>Genre</label>
+        <select id="edit-genre">
+          <option value="Action">Action</option>
+          <option value="Comedy">Comedy</option>
+          <option value="Drama">Drama</option>
+          <option value="Horror">Horror</option>
+          <option value="Sci-Fi">Sci-Fi</option>
+          <option value="Romance">Romance</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Animation">Animation</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Year</label><input type="number" id="edit-year" /></div>
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <label>Rating</label>
+        <select id="edit-rating">
+          <option value="">-- Rate it --</option>
+          <option value="⭐">⭐ (1/5)</option>
+          <option value="⭐⭐">⭐⭐ (2/5)</option>
+          <option value="⭐⭐⭐">⭐⭐⭐ (3/5)</option>
+          <option value="⭐⭐⭐⭐">⭐⭐⭐⭐ (4/5)</option>
+          <option value="⭐⭐⭐⭐⭐">⭐⭐⭐⭐⭐ (5/5)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="edit-status">
+          <option value="Want to Watch">Want to Watch</option>
+          <option value="Watching">Watching</option>
+          <option value="Watched">Watched</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Date Watched</label><input type="date" id="edit-watched-date" /></div>
+    <div class="form-group"><label>Poster URL</label><input type="text" id="edit-poster" /></div>
+    <div class="form-group"><label>Director</label><input type="text" id="edit-director" /></div>
+    <div class="form-group"><label>Cast (comma separated)</label><input type="text" id="edit-cast" /></div>
+    <div class="form-group"><label>Review</label><textarea id="edit-review"></textarea></div>
+    <button class="btn-save" onclick="saveEdit()">Save Changes</button>
+  </div>
+</div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const movieId = params.get('id');
+  let currentMovie = null;
+  const statusClass = { 'Watched': 's-watched', 'Watching': 's-watching', 'Want to Watch': 's-want' };
+
+  async function loadMovie() {
+    const res = await fetch(`/api/movies/${movieId}`);
+    currentMovie = await res.json();
+    renderMovie(currentMovie);
+  }
+
+  function renderMovie(m) {
+    document.title = m.title + ' — MovieList';
+    document.getElementById('movie-layout').innerHTML = `
+      <div class="poster">
+        ${m.poster ? `<img src="${m.poster}" onerror="this.parentElement.innerHTML='🎬'" />` : '🎬'}
+      </div>
+      <div class="movie-details">
+        <h1>${m.title}</h1>
+        <div class="meta">
+          <span>🎭 ${m.genre}</span>
+          ${m.year ? `<span>📅 ${m.year}</span>` : ''}
+          ${m.watched_date ? `<span>✅ Watched: ${m.watched_date}</span>` : ''}
+        </div>
+        <div class="rating">${m.rating || 'Not rated yet'}</div>
+        <span class="status-badge ${statusClass[m.status] || 's-want'}">${m.status}</span>
+        ${m.director ? `<div class="info-box"><h3>Director</h3><p>🎬 ${m.director}</p></div>` : ''}
+        ${m.cast ? `<div class="info-box"><h3>Cast</h3><p>⭐ ${m.cast}</p></div>` : ''}
+        ${m.review ? `<div class="info-box"><h3>Your Review</h3><p>${m.review}</p></div>` : ''}
+        <div class="actions">
+          <button class="btn btn-edit" onclick="toggleEdit()">✏️ Edit</button>
+          <button class="btn btn-delete" onclick="deleteMovie()">🗑️ Delete</button>
+          <button class="btn btn-cinema" onclick="window.location='cinema.html?id=${m.id}'">🎬 Cinema Mode</button>
+          <button class="btn btn-notes" onclick="window.location='notes.html?id=${m.id}'">📝 Notes</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function toggleEdit() {
+    const form = document.getElementById('edit-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    if (form.style.display === 'block' && currentMovie) {
+      document.getElementById('edit-title').value = currentMovie.title;
+      document.getElementById('edit-genre').value = currentMovie.genre;
+      document.getElementById('edit-year').value = currentMovie.year || '';
+      document.getElementById('edit-rating').value = currentMovie.rating || '';
+      document.getElementById('edit-status').value = currentMovie.status;
+      document.getElementById('edit-watched-date').value = currentMovie.watched_date || '';
+      document.getElementById('edit-poster').value = currentMovie.poster || '';
+      document.getElementById('edit-director').value = currentMovie.director || '';
+      document.getElementById('edit-cast').value = currentMovie.cast || '';
+      document.getElementById('edit-review').value = currentMovie.review || '';
+    }
+  }
+
+  async function saveEdit() {
+    const updated = {
+      title: document.getElementById('edit-title').value,
+      genre: document.getElementById('edit-genre').value,
+      year: parseInt(document.getElementById('edit-year').value) || null,
+      rating: document.getElementById('edit-rating').value,
+      status: document.getElementById('edit-status').value,
+      watched_date: document.getElementById('edit-watched-date').value,
+      poster: document.getElementById('edit-poster').value,
+      director: document.getElementById('edit-director').value,
+      cast: document.getElementById('edit-cast').value,
+      review: document.getElementById('edit-review').value
+    };
+    await fetch(`/api/movies/${movieId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
+    });
+    currentMovie = { ...currentMovie, ...updated };
+    renderMovie(currentMovie);
+    document.getElementById('edit-form').style.display = 'none';
+  }
+
+  async function deleteMovie() {
+    if (confirm('Are you sure you want to delete this movie?')) {
+      await fetch(`/api/movies/${movieId}`, { method: 'DELETE' });
+      window.location.href = 'index.html';
+    }
+  }
+
+  loadMovie();
+</script>
+</body>
+</html>

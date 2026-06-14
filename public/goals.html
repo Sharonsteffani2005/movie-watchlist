@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Watchlist Goals</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav { background: #1a1a2e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.2rem; font-size: 0.9rem; }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #e94560; }
+    .container { max-width: 700px; margin: 3rem auto; padding: 0 2rem; }
+    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    h2 span { color: #e94560; }
+    .subtitle { color: #aaa; margin-bottom: 2rem; }
+    .add-bar { display: flex; gap: 10px; margin-bottom: 2rem; flex-wrap: wrap; }
+    .add-bar input, .add-bar select { padding: 0.7rem 1rem; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; color: #fff; font-size: 1rem; }
+    .add-bar input { width: 120px; }
+    .btn-add { padding: 0.7rem 1.5rem; background: #e94560; color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .btn-add:hover { background: #c73652; }
+    .goal-card { background: #1a1a2e; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid #2a2a4a; }
+    .goal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .goal-year { font-size: 1.3rem; font-weight: bold; }
+    .goal-count { font-size: 0.9rem; color: #aaa; }
+    .goal-remove { background: none; border: 1px solid #e94560; color: #e94560; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+    .goal-remove:hover { background: #e94560; color: #fff; }
+    .progress-track { background: #0f0f1a; border-radius: 20px; height: 32px; overflow: hidden; border: 1px solid #2a2a4a; margin-bottom: 0.8rem; }
+    .progress-fill { height: 100%; border-radius: 20px; display: flex; align-items: center; padding-left: 12px; font-size: 0.85rem; font-weight: bold; transition: width 1s ease; min-width: 40px; }
+    .fill-great { background: linear-gradient(90deg, #166534, #4ade80); }
+    .fill-good { background: linear-gradient(90deg, #1e3a5f, #60a5fa); }
+    .fill-start { background: linear-gradient(90deg, #3b1f5e, #c084fc); }
+    .goal-footer { display: flex; justify-content: space-between; font-size: 0.85rem; color: #aaa; }
+    .goal-footer .highlight { color: #e94560; font-weight: bold; }
+    .empty { color: #aaa; text-align: center; padding: 3rem; }
+    .tip { background: #1a1a2e; border-radius: 10px; padding: 1rem 1.2rem; border: 1px solid #2a2a4a; margin-bottom: 2rem; font-size: 0.9rem; color: #aaa; }
+    .tip strong { color: #e94560; }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="add.html">+ Add</a>
+    <a href="goals.html" class="active">Goals</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="picker.html">Picker</a>
+    <a href="topten.html">Top 10</a>
+    <a href="people.html">People</a>
+    <a href="friends.html">Friends</a>
+    <a href="stats.html">Stats</a>
+  </div>
+</nav>
+<div class="container">
+  <h2>🎯 Watchlist <span>Goals</span></h2>
+  <p class="subtitle">Set a movie watching goal for any year and track your progress</p>
+
+  <div class="tip">
+    <strong>Tip:</strong> When you mark a movie as "Watched", set a <strong>watched date</strong> on the detail page — that's how goals track your progress per year!
+  </div>
+
+  <div class="add-bar">
+    <input type="number" id="goal-year" placeholder="Year" value="2026" min="2000" max="2099" />
+    <input type="number" id="goal-target" placeholder="Target (e.g. 50)" min="1" max="999" />
+    <button class="btn-add" onclick="addGoal()">Set Goal</button>
+  </div>
+
+  <div id="goals-list"><div class="empty">No goals yet. Set one above!</div></div>
+</div>
+<script>
+  async function load() {
+    const goals = await fetch('/api/goals').then(r => r.json());
+    const list = document.getElementById('goals-list');
+    if (goals.length === 0) {
+      list.innerHTML = '<div class="empty">No goals yet. Set one above!</div>';
+      return;
+    }
+    list.innerHTML = goals.map(g => {
+      const pct = Math.min(100, Math.round((g.watched / g.target) * 100));
+      const fillClass = pct >= 100 ? 'fill-great' : pct >= 50 ? 'fill-good' : 'fill-start';
+      const remaining = Math.max(0, g.target - g.watched);
+      return `
+        <div class="goal-card">
+          <div class="goal-header">
+            <div>
+              <div class="goal-year">📅 ${g.year} Goal</div>
+              <div class="goal-count">${g.watched} of ${g.target} movies watched</div>
+            </div>
+            <button class="goal-remove" onclick="removeGoal(${g.id})">Remove</button>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill ${fillClass}" style="width:${pct}%">${pct}%</div>
+          </div>
+          <div class="goal-footer">
+            <span>${pct >= 100 ? '🎉 Goal completed!' : `<span class="highlight">${remaining}</span> more to go`}</span>
+            <span>${g.target} movies target</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function addGoal() {
+    const year = parseInt(document.getElementById('goal-year').value);
+    const target = parseInt(document.getElementById('goal-target').value);
+    if (!year || !target) { alert('Please fill in both year and target!'); return; }
+    await fetch('/api/goals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year, target })
+    });
+    load();
+  }
+
+  async function removeGoal(id) {
+    if (!confirm('Remove this goal?')) return;
+    await fetch(`/api/goals/${id}`, { method: 'DELETE' });
+    load();
+  }
+
+  load();
+</script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Directors & Cast</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav { background: #1a1a2e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.5rem; font-size: 0.95rem; }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #e94560; }
+    .container { max-width: 900px; margin: 3rem auto; padding: 0 2rem; }
+    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    h2 span { color: #e94560; }
+    .subtitle { color: #aaa; margin-bottom: 2rem; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 2rem; }
+    .tab { padding: 0.5rem 1.5rem; border-radius: 30px; cursor: pointer; font-size: 0.95rem; border: 1px solid #2a2a4a; background: #1a1a2e; color: #aaa; }
+    .tab.active { background: #e94560; border-color: #e94560; color: #fff; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .person-card { background: #1a1a2e; border-radius: 12px; padding: 1.2rem 1.5rem; margin-bottom: 1.2rem; border: 1px solid #2a2a4a; }
+    .person-name { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; color: #e94560; }
+    .person-movies { display: flex; gap: 10px; flex-wrap: wrap; }
+    .mini-card { display: flex; align-items: center; gap: 8px; background: #0f0f1a; border-radius: 8px; padding: 6px 10px; border: 1px solid #2a2a4a; cursor: pointer; text-decoration: none; color: #fff; }
+    .mini-card:hover { border-color: #e94560; }
+    .mini-poster { width: 30px; height: 42px; border-radius: 4px; background: #1a1a2e; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .mini-poster img { width: 100%; height: 100%; object-fit: cover; }
+    .mini-title { font-size: 0.85rem; }
+    .mini-year { font-size: 0.75rem; color: #aaa; }
+    .empty { color: #aaa; text-align: center; padding: 3rem; }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="add.html">+ Add Movie</a>
+    <a href="topten.html">Top 10</a>
+    <a href="people.html" class="active">People</a>
+    <a href="friends.html">Friends</a>
+    <a href="stats.html">Stats</a>
+  </div>
+</nav>
+<div class="container">
+  <h2>🎭 Directors & <span>Cast</span></h2>
+  <p class="subtitle">Everyone behind the movies in your watchlist</p>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('directors', this)">🎬 Directors</div>
+    <div class="tab" onclick="switchTab('actors', this)">⭐ Actors</div>
+  </div>
+  <div class="section active" id="directors-section">
+    <div id="directors-list"><div class="empty">Loading...</div></div>
+  </div>
+  <div class="section" id="actors-section">
+    <div id="actors-list"><div class="empty">Loading...</div></div>
+  </div>
+</div>
+<script>
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(tab + '-section').classList.add('active');
+  }
+
+  function movieCard(m) {
+    return `
+      <a class="mini-card" href="detail.html?id=${m.id}">
+        <div class="mini-poster">
+          ${m.poster ? `<img src="${m.poster}" onerror="this.parentElement.innerHTML='🎬'"/>` : '🎬'}
+        </div>
+        <div>
+          <div class="mini-title">${m.title}</div>
+          <div class="mini-year">${m.year || ''} ${m.rating || ''}</div>
+        </div>
+      </a>
+    `;
+  }
+
+  function renderPeople(obj, containerId, emptyMsg) {
+    const container = document.getElementById(containerId);
+    const keys = Object.keys(obj);
+    if (keys.length === 0) {
+      container.innerHTML = `<div class="empty">${emptyMsg}</div>`;
+      return;
+    }
+    container.innerHTML = keys.sort().map(name => `
+      <div class="person-card">
+        <div class="person-name">${name}
+          <span style="font-size:0.8rem;color:#aaa;font-weight:normal;">(${obj[name].length} movie${obj[name].length > 1 ? 's' : ''})</span>
+        </div>
+        <div class="person-movies">${obj[name].map(movieCard).join('')}</div>
+      </div>
+    `).join('');
+  }
+
+  async function load() {
+    const data = await fetch('/api/people').then(r => r.json());
+    renderPeople(data.directors, 'directors-list', 'No directors added yet. Edit your movies to add directors!');
+    renderPeople(data.actors, 'actors-list', 'No cast added yet. Edit your movies to add cast members!');
+  }
+
+  load();
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cinema Mode</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: sans-serif; background: #000;
+      color: #fff; min-height: 100vh; overflow-x: hidden;
+    }
+
+    .cinema-bg {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-size: cover; background-position: center;
+      filter: blur(20px) brightness(0.3);
+      transform: scale(1.1);
+      z-index: 0;
+    }
+
+    .cinema-content {
+      position: relative; z-index: 1;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 2rem;
+    }
+
+    .back-btn {
+      position: fixed; top: 1.5rem; left: 1.5rem;
+      color: #fff; text-decoration: none; font-size: 0.9rem;
+      background: rgba(255,255,255,0.1); padding: 0.5rem 1rem;
+      border-radius: 30px; backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      z-index: 10;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.2); }
+
+    .cinema-card {
+      display: flex; gap: 3rem; align-items: flex-start;
+      max-width: 900px; width: 100%;
+      background: rgba(0,0,0,0.6); border-radius: 20px;
+      padding: 2.5rem; backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .cinema-poster {
+      width: 220px; flex-shrink: 0; border-radius: 12px;
+      overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      font-size: 5rem; display: flex; align-items: center;
+      justify-content: center; background: #1a1a2e;
+      aspect-ratio: 2/3;
+    }
+    .cinema-poster img { width: 100%; height: 100%; object-fit: cover; }
+
+    .cinema-info { flex: 1; }
+
+    .cinema-label {
+      font-size: 0.75rem; letter-spacing: 0.15em; color: #e94560;
+      text-transform: uppercase; margin-bottom: 0.75rem;
+    }
+
+    .cinema-title {
+      font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+
+    .cinema-meta {
+      color: #aaa; font-size: 0.95rem; margin-bottom: 1.5rem;
+    }
+    .cinema-meta span { margin-right: 1.2rem; }
+
+    .cinema-rating { font-size: 1.5rem; margin-bottom: 1rem; }
+
+    .cinema-status {
+      display: inline-block; font-size: 0.85rem;
+      padding: 5px 16px; border-radius: 30px; margin-bottom: 1.5rem;
+    }
+    .s-watched { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid #4ade80; }
+    .s-watching { background: rgba(96,165,250,0.15); color: #60a5fa; border: 1px solid #60a5fa; }
+    .s-want { background: rgba(192,132,252,0.15); color: #c084fc; border: 1px solid #c084fc; }
+
+    .divider { height: 1px; background: rgba(255,255,255,0.1); margin: 1.2rem 0; }
+
+    .cinema-section-title {
+      font-size: 0.75rem; letter-spacing: 0.1em; color: #aaa;
+      text-transform: uppercase; margin-bottom: 0.5rem;
+    }
+    .cinema-section-text {
+      font-size: 0.95rem; color: #ddd; line-height: 1.7; margin-bottom: 1.2rem;
+    }
+
+    .mood-lights {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0;
+    }
+    .mood-light {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px); opacity: 0.15; animation: float 8s ease-in-out infinite;
+    }
+    .ml1 { width: 400px; height: 400px; background: #e94560; top: -100px; left: -100px; animation-delay: 0s; }
+    .ml2 { width: 300px; height: 300px; background: #4a90e2; bottom: -50px; right: -50px; animation-delay: 3s; }
+    .ml3 { width: 250px; height: 250px; background: #9b59b6; top: 50%; left: 50%; animation-delay: 6s; }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(30px, -30px); }
+    }
+
+    @media (max-width: 650px) {
+      .cinema-card { flex-direction: column; align-items: center; padding: 1.5rem; }
+      .cinema-poster { width: 160px; }
+      .cinema-title { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="mood-lights">
+  <div class="mood-light ml1"></div>
+  <div class="mood-light ml2"></div>
+  <div class="mood-light ml3"></div>
+</div>
+
+<div class="cinema-bg" id="cinema-bg"></div>
+
+<a href="#" class="back-btn" id="back-btn">← Back</a>
+
+<div class="cinema-content">
+  <div class="cinema-card" id="cinema-card">
+    <div style="color:#aaa;text-align:center;width:100%;padding:2rem;">Loading...</div>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const movieId = params.get('id');
+
+  document.getElementById('back-btn').href = `detail.html?id=${movieId}`;
+
+  const statusClass = {
+    'Watched': 's-watched',
+    'Watching': 's-watching',
+    'Want to Watch': 's-want'
+  };
+
+  async function load() {
+    const m = await fetch(`/api/movies/${movieId}`).then(r => r.json());
+
+    // Set blurred background
+    if (m.poster) {
+      document.getElementById('cinema-bg').style.backgroundImage = `url('${m.poster}')`;
+    }
+
+    document.title = m.title + ' — Cinema Mode';
+
+    document.getElementById('cinema-card').innerHTML = `
+      <div class="cinema-poster">
+        ${m.poster ? `<img src="${m.poster}" onerror="this.parentElement.innerHTML='🎬'"/>` : '🎬'}
+      </div>
+      <div class="cinema-info">
+        <div class="cinema-label">🎬 Now Viewing</div>
+        <div class="cinema-title">${m.title}</div>
+        <div class="cinema-meta">
+          ${m.year ? `<span>📅 ${m.year}</span>` : ''}
+          <span>🎭 ${m.genre}</span>
+          ${m.director ? `<span>🎬 ${m.director}</span>` : ''}
+        </div>
+        <div class="cinema-rating">${m.rating || ''}</div>
+        <span class="cinema-status ${statusClass[m.status] || 's-want'}">${m.status}</span>
+
+        ${m.cast ? `
+          <div class="divider"></div>
+          <div class="cinema-section-title">Cast</div>
+          <div class="cinema-section-text">⭐ ${m.cast}</div>
+        ` : ''}
+
+        ${m.review ? `
+          <div class="divider"></div>
+          <div class="cinema-section-title">Your Review</div>
+          <div class="cinema-section-text">"${m.review}"</div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  load();
+</script>
+</body>
+</html>

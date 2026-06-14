@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stats</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav { background: #1a1a2e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.5rem; font-size: 0.95rem; }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #e94560; }
+    .container { max-width: 900px; margin: 3rem auto; padding: 0 2rem; }
+    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    h2 span { color: #e94560; }
+    .subtitle { color: #aaa; margin-bottom: 2rem; }
+    .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+    .stat-card { background: #1a1a2e; border-radius: 12px; padding: 1.5rem; text-align: center; border: 1px solid #2a2a4a; }
+    .stat-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .stat-card .num { font-size: 2.5rem; font-weight: bold; color: #e94560; }
+    .stat-card .label { font-size: 0.85rem; color: #aaa; margin-top: 4px; }
+    .section { margin-bottom: 2.5rem; }
+    .section h3 { font-size: 1.1rem; margin-bottom: 1rem; color: #e94560; }
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; }
+    .bar-label { width: 120px; font-size: 0.85rem; color: #aaa; text-align: right; flex-shrink: 0; }
+    .bar-track { flex: 1; background: #1a1a2e; border-radius: 20px; height: 28px; overflow: hidden; border: 1px solid #2a2a4a; }
+    .bar-fill { height: 100%; border-radius: 20px; display: flex; align-items: center; padding-left: 10px; font-size: 0.8rem; font-weight: bold; transition: width 0.8s ease; }
+    .bar-count { width: 30px; font-size: 0.85rem; color: #aaa; }
+    .status-bars .s-watched { background: linear-gradient(90deg, #166534, #4ade80); }
+    .status-bars .s-watching { background: linear-gradient(90deg, #1e3a5f, #60a5fa); }
+    .status-bars .s-want { background: linear-gradient(90deg, #3b1f5e, #c084fc); }
+    .genre-bars .bar-fill { background: linear-gradient(90deg, #7c1f3a, #e94560); }
+    .empty { color: #aaa; text-align: center; padding: 2rem; }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="add.html">+ Add Movie</a>
+    <a href="topten.html">Top 10</a>
+    <a href="people.html">People</a>
+    <a href="friends.html">Friends</a>
+    <a href="stats.html" class="active">Stats</a>
+  </div>
+</nav>
+<div class="container">
+  <h2>Your <span>Stats</span></h2>
+  <p class="subtitle">A summary of your movie watching journey</p>
+  <div class="stat-cards">
+    <div class="stat-card"><div class="icon">🎬</div><div class="num" id="total">0</div><div class="label">Total Movies</div></div>
+    <div class="stat-card"><div class="icon">✅</div><div class="num" id="watched">0</div><div class="label">Watched</div></div>
+    <div class="stat-card"><div class="icon">📺</div><div class="num" id="watching">0</div><div class="label">Watching</div></div>
+    <div class="stat-card"><div class="icon">📌</div><div class="num" id="want">0</div><div class="label">Want to Watch</div></div>
+  </div>
+  <div class="section">
+    <h3>📊 Watch Status Breakdown</h3>
+    <div class="bar-chart status-bars" id="status-bars"><div class="empty">Loading...</div></div>
+  </div>
+  <div class="section">
+    <h3>🎭 Movies by Genre</h3>
+    <div class="bar-chart genre-bars" id="genre-bars"><div class="empty">Loading...</div></div>
+  </div>
+</div>
+<script>
+  async function loadStats() {
+    const stats = await fetch('/api/stats').then(r => r.json());
+    document.getElementById('total').textContent = stats.total;
+    document.getElementById('watched').textContent = stats.watched;
+    document.getElementById('watching').textContent = stats.watching;
+    document.getElementById('want').textContent = stats.want;
+    const total = stats.total || 1;
+    const statusData = [
+      { label: 'Watched', count: stats.watched, cls: 's-watched' },
+      { label: 'Watching', count: stats.watching, cls: 's-watching' },
+      { label: 'Want to Watch', count: stats.want, cls: 's-want' }
+    ];
+    document.getElementById('status-bars').innerHTML = statusData.map(s => `
+      <div class="bar-row">
+        <div class="bar-label">${s.label}</div>
+        <div class="bar-track">
+          <div class="bar-fill ${s.cls}" style="width:${Math.round(s.count/total*100)}%">
+            ${s.count > 0 ? Math.round(s.count/total*100) + '%' : ''}
+          </div>
+        </div>
+        <div class="bar-count">${s.count}</div>
+      </div>
+    `).join('');
+    if (stats.byGenre.length === 0) {
+      document.getElementById('genre-bars').innerHTML = '<div class="empty">No movies added yet.</div>';
+      return;
+    }
+    const maxGenre = Math.max(...stats.byGenre.map(g => g.count));
+    document.getElementById('genre-bars').innerHTML = stats.byGenre
+      .sort((a, b) => b.count - a.count)
+      .map(g => `
+        <div class="bar-row">
+          <div class="bar-label">${g.genre}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${Math.round(g.count/maxGenre*100)}%">
+              ${g.count > 0 ? g.count : ''}
+            </div>
+          </div>
+          <div class="bar-count">${g.count}</div>
+        </div>
+      `).join('');
+  }
+  loadStats();
+</script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Top 10</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav { background: #1a1a2e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.5rem; font-size: 0.95rem; }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #e94560; }
+    .container { max-width: 700px; margin: 3rem auto; padding: 0 2rem; }
+    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    h2 span { color: #e94560; }
+    .subtitle { color: #aaa; margin-bottom: 2rem; }
+    .top-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 2rem; }
+    .top-row { display: flex; align-items: center; gap: 14px; background: #1a1a2e; border-radius: 12px; padding: 12px 16px; border: 1px solid #2a2a4a; }
+    .rank-num { font-size: 1.8rem; font-weight: bold; color: #e94560; width: 40px; text-align: center; flex-shrink: 0; }
+    .rank-num.gold { color: #FFD700; }
+    .rank-num.silver { color: #C0C0C0; }
+    .rank-num.bronze { color: #CD7F32; }
+    .movie-mini-poster { width: 45px; height: 65px; border-radius: 6px; background: #0f0f1a; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1px solid #2a2a4a; }
+    .movie-mini-poster img { width: 100%; height: 100%; object-fit: cover; }
+    .movie-mini-info { flex: 1; }
+    .movie-mini-title { font-weight: bold; font-size: 1rem; }
+    .movie-mini-meta { font-size: 0.8rem; color: #aaa; margin-top: 3px; }
+    .slot-select { background: #0f0f1a; border: 1px solid #2a2a4a; color: #aaa; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; max-width: 180px; }
+    .slot-select:focus { outline: none; border-color: #e94560; }
+    .remove-btn { background: none; border: 1px solid #e94560; color: #e94560; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; flex-shrink: 0; }
+    .remove-btn:hover { background: #e94560; color: #fff; }
+    .empty-slot { color: #555; font-style: italic; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="add.html">+ Add Movie</a>
+    <a href="topten.html" class="active">Top 10</a>
+    <a href="people.html">People</a>
+    <a href="friends.html">Friends</a>
+    <a href="stats.html">Stats</a>
+  </div>
+</nav>
+<div class="container">
+  <h2>🏆 My Top <span>10</span></h2>
+  <p class="subtitle">Pick your all-time favourite movies and rank them</p>
+  <div class="top-list" id="top-list"></div>
+</div>
+<script>
+  let allMovies = [];
+  let topTen = {};
+  const rankColor = { 1: 'gold', 2: 'silver', 3: 'bronze' };
+
+  async function load() {
+    const [movies, top] = await Promise.all([
+      fetch('/api/movies').then(r => r.json()),
+      fetch('/api/topten').then(r => r.json())
+    ]);
+    allMovies = movies;
+    topTen = {};
+    top.forEach(t => topTen[t.rank] = t.movie_id);
+    render();
+  }
+
+  function render() {
+    const list = document.getElementById('top-list');
+    list.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      const movieId = topTen[i];
+      const movie = allMovies.find(m => m.id === movieId);
+      const colorClass = rankColor[i] || '';
+      const row = document.createElement('div');
+      row.className = 'top-row';
+      row.innerHTML = `
+        <div class="rank-num ${colorClass}">${i}</div>
+        <div class="movie-mini-poster">
+          ${movie && movie.poster ? `<img src="${movie.poster}" onerror="this.parentElement.innerHTML='🎬'"/>` : '🎬'}
+        </div>
+        <div class="movie-mini-info">
+          ${movie
+            ? `<div class="movie-mini-title">${movie.title}</div>
+               <div class="movie-mini-meta">${movie.year || ''} • ${movie.genre} • ${movie.rating || 'No rating'}</div>`
+            : `<div class="empty-slot">— empty slot —</div>`
+          }
+        </div>
+        <select class="slot-select" onchange="assignMovie(${i}, this.value)">
+          <option value="">Pick a movie...</option>
+          ${allMovies.map(m => `<option value="${m.id}" ${movieId === m.id ? 'selected' : ''}>${m.title}</option>`).join('')}
+        </select>
+        ${movie ? `<button class="remove-btn" onclick="removeSlot(${i})">✕</button>` : ''}
+      `;
+      list.appendChild(row);
+    }
+  }
+
+  async function assignMovie(rank, movieId) {
+    if (!movieId) return;
+    await fetch('/api/topten', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ movieId: parseInt(movieId), rank })
+    });
+    topTen[rank] = parseInt(movieId);
+    render();
+  }
+
+  async function removeSlot(rank) {
+    await fetch(`/api/topten/${rank}`, { method: 'DELETE' });
+    delete topTen[rank];
+    render();
+  }
+
+  load();
+</script>
+</body>
+</html>

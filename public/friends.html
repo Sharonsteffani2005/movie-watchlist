@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Watchlist Friends</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f1a; color: #fff; min-height: 100vh; }
+    nav { background: #1a1a2e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+    nav .logo { font-size: 1.4rem; font-weight: bold; color: #e94560; }
+    nav a { color: #aaa; text-decoration: none; margin-left: 1.5rem; font-size: 0.95rem; }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #e94560; }
+    .container { max-width: 900px; margin: 3rem auto; padding: 0 2rem; }
+    h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    h2 span { color: #e94560; }
+    .subtitle { color: #aaa; margin-bottom: 2rem; }
+    .add-friend-bar { display: flex; gap: 10px; margin-bottom: 2rem; }
+    .add-friend-bar input { flex: 1; padding: 0.7rem 1rem; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; color: #fff; font-size: 1rem; }
+    .add-friend-bar input:focus { outline: none; border-color: #e94560; }
+    .btn-add { padding: 0.7rem 1.5rem; background: #e94560; color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+    .btn-add:hover { background: #c73652; }
+    .friend-card { background: #1a1a2e; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid #2a2a4a; }
+    .friend-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .friend-name { font-size: 1.2rem; font-weight: bold; }
+    .friend-name span { font-size: 0.85rem; color: #aaa; font-weight: normal; margin-left: 8px; }
+    .friend-actions { display: flex; gap: 8px; }
+    .btn-sm { padding: 0.4rem 1rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; border: none; }
+    .btn-compare { background: #16213e; color: #60a5fa; border: 1px solid #60a5fa; }
+    .btn-compare:hover { background: #60a5fa; color: #fff; }
+    .btn-remove { background: #16213e; color: #e94560; border: 1px solid #e94560; }
+    .btn-remove:hover { background: #e94560; color: #fff; }
+    .add-movie-bar { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .add-movie-bar input, .add-movie-bar select { padding: 0.5rem 0.8rem; background: #0f0f1a; border: 1px solid #2a2a4a; border-radius: 6px; color: #fff; font-size: 0.9rem; }
+    .add-movie-bar input { flex: 1; min-width: 140px; }
+    .friend-movies { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 0.5rem; }
+    .fmovie { display: flex; align-items: center; gap: 8px; background: #0f0f1a; border-radius: 8px; padding: 6px 10px; border: 1px solid #2a2a4a; font-size: 0.85rem; }
+    .fmovie-remove { background: none; border: none; color: #e94560; cursor: pointer; font-size: 1rem; padding: 0 4px; }
+    .compare-box { background: #0f0f1a; border-radius: 10px; padding: 1.2rem; margin-top: 1rem; border: 1px solid #2a2a4a; display: none; }
+    .compare-box h4 { font-size: 0.85rem; color: #aaa; text-transform: uppercase; margin-bottom: 8px; }
+    .compare-section { margin-bottom: 1rem; }
+    .compare-tag { display: inline-block; font-size: 0.8rem; padding: 3px 10px; border-radius: 20px; margin: 3px; }
+    .tag-common { background: #0d3320; color: #4ade80; }
+    .tag-friend { background: #1a2a4a; color: #60a5fa; }
+    .empty { color: #aaa; text-align: center; padding: 2rem; }
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo">🎬 MovieList</div>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="add.html">+ Add Movie</a>
+    <a href="topten.html">Top 10</a>
+    <a href="people.html">People</a>
+    <a href="friends.html" class="active">Friends</a>
+    <a href="stats.html">Stats</a>
+  </div>
+</nav>
+<div class="container">
+  <h2>👥 Watchlist <span>Friends</span></h2>
+  <p class="subtitle">Add friends, track their recommendations and compare watchlists</p>
+  <div class="add-friend-bar">
+    <input type="text" id="friend-name" placeholder="Enter friend's name..." />
+    <button class="btn-add" onclick="addFriend()">+ Add Friend</button>
+  </div>
+  <div id="friends-list"><div class="empty">No friends added yet. Add one above!</div></div>
+</div>
+<script>
+  let friends = [];
+
+  async function load() {
+    friends = await fetch('/api/friends').then(r => r.json());
+    render();
+  }
+
+  function render() {
+    const list = document.getElementById('friends-list');
+    if (friends.length === 0) {
+      list.innerHTML = '<div class="empty">No friends added yet. Add one above!</div>';
+      return;
+    }
+    list.innerHTML = friends.map(f => `
+      <div class="friend-card" id="friend-${f.id}">
+        <div class="friend-header">
+          <div class="friend-name">
+            👤 ${f.name}
+            <span>${f.movies.length} movie${f.movies.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="friend-actions">
+            <button class="btn-sm btn-compare" onclick="compare(${f.id})">🔍 Compare</button>
+            <button class="btn-sm btn-remove" onclick="removeFriend(${f.id})">Remove</button>
+          </div>
+        </div>
+        <div class="add-movie-bar">
+          <input type="text" id="fm-title-${f.id}" placeholder="Movie title..." />
+          <select id="fm-genre-${f.id}">
+            <option value="">Genre</option>
+            <option value="Action">Action</option>
+            <option value="Comedy">Comedy</option>
+            <option value="Drama">Drama</option>
+            <option value="Horror">Horror</option>
+            <option value="Sci-Fi">Sci-Fi</option>
+            <option value="Romance">Romance</option>
+            <option value="Thriller">Thriller</option>
+            <option value="Animation">Animation</option>
+          </select>
+          <button class="btn-add" style="padding:0.5rem 1rem;font-size:0.85rem;" onclick="addFriendMovie(${f.id})">+ Add</button>
+        </div>
+        <div class="friend-movies">
+          ${f.movies.length === 0
+            ? '<span style="color:#555;font-size:0.85rem;">No movies yet — add some above!</span>'
+            : f.movies.map(m => `
+              <div class="fmovie">
+                <span>🎬 ${m.title} ${m.genre ? `<span style="color:#aaa;font-size:0.75rem;">(${m.genre})</span>` : ''}</span>
+                <button class="fmovie-remove" onclick="removeFriendMovie(${m.id}, ${f.id})">✕</button>
+              </div>
+            `).join('')
+          }
+        </div>
+        <div class="compare-box" id="compare-${f.id}">
+          <div class="compare-section">
+            <h4>✅ Movies you both have</h4>
+            <div id="common-${f.id}"></div>
+          </div>
+          <div class="compare-section">
+            <h4>📌 Only ${f.name} has (recommendations for you!)</h4>
+            <div id="only-${f.id}"></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function addFriend() {
+    const name = document.getElementById('friend-name').value.trim();
+    if (!name) { alert('Please enter a name!'); return; }
+    const friend = await fetch('/api/friends', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    }).then(r => r.json());
+    friends.push(friend);
+    document.getElementById('friend-name').value = '';
+    render();
+  }
+
+  async function removeFriend(id) {
+    if (!confirm('Remove this friend?')) return;
+    await fetch(`/api/friends/${id}`, { method: 'DELETE' });
+    friends = friends.filter(f => f.id !== id);
+    render();
+  }
+
+  async function addFriendMovie(friendId) {
+    const title = document.getElementById(`fm-title-${friendId}`).value.trim();
+    const genre = document.getElementById(`fm-genre-${friendId}`).value;
+    if (!title) { alert('Please enter a movie title!'); return; }
+    const movie = await fetch(`/api/friends/${friendId}/movies`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, genre })
+    }).then(r => r.json());
+    const friend = friends.find(f => f.id === friendId);
+    friend.movies.push(movie);
+    document.getElementById(`fm-title-${friendId}`).value = '';
+    render();
+  }
+
+  async function removeFriendMovie(movieId, friendId) {
+    await fetch(`/api/friends/movies/${movieId}`, { method: 'DELETE' });
+    const friend = friends.find(f => f.id === friendId);
+    friend.movies = friend.movies.filter(m => m.id !== movieId);
+    render();
+  }
+
+  async function compare(friendId) {
+    const box = document.getElementById(`compare-${friendId}`);
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    if (box.style.display === 'none') return;
+    const data = await fetch(`/api/friends/${friendId}/compare`).then(r => r.json());
+    const friend = friends.find(f => f.id === friendId);
+    document.getElementById(`common-${friendId}`).innerHTML = data.common.length === 0
+      ? '<span style="color:#555">None in common yet</span>'
+      : data.common.map(m => `<span class="compare-tag tag-common">✅ ${m.title}</span>`).join('');
+    document.getElementById(`only-${friendId}`).innerHTML = data.onlyFriend.length === 0
+      ? '<span style="color:#555">No unique recommendations</span>'
+      : data.onlyFriend.map(m => `<span class="compare-tag tag-friend">📌 ${m.title}</span>`).join('');
+  }
+
+  load();
+</script>
+</body>
+</html>
